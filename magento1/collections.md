@@ -38,7 +38,71 @@ foreach ($collection as $product) {
 
 Inside the foreach above, for each time the collection is iterated a product's model is passed to the context. Where this `Mage_Catalog_Model_Product` class comes from?
 
-Basically, when you call the `load()` method from a Collection object, which is an instance from `Mage_Core_Model_Resource_Db`.
+Take a look at the method right below:
+
+```php
+class Varien_Data_Collection_Db extends Varien_Data_Collection
+{
+
+    ...
+
+    public function load($printQuery = false, $logQuery = false)
+    {
+        if ($this->isLoaded()) {
+            return $this;
+        }
+
+        $this->_beforeLoad();
+
+        $this->_renderFilters()
+             ->_renderOrders()
+             ->_renderLimit();
+
+        $this->printLogQuery($printQuery, $logQuery);
+        $data = $this->getData();
+        $this->resetData();
+
+        if (is_array($data)) {
+            foreach ($data as $row) {
+                $item = $this->getNewEmptyItem();
+                if ($this->getIdFieldName()) {
+                    $item->setIdFieldName($this->getIdFieldName());
+                }
+                $item->addData($row);
+                $this->addItem($item);
+            }
+        }
+
+        $this->_setIsLoaded();
+        $this->_afterLoad();
+        return $this;
+    }
+    
+    ...
+    
+}
+```
+
+The data models come from this exactly part:
+
+```php
+    ...
+    
+    if (is_array($data)) {
+        foreach ($data as $row) {
+            $item = $this->getNewEmptyItem();
+            if ($this->getIdFieldName()) {
+                $item->setIdFieldName($this->getIdFieldName());
+            }
+            $item->addData($row);
+            $this->addItem($item);
+        }
+    }
+    
+    ...
+```
+
+Basically, when you call the `load()` method from a Collection object, which is an instance from `Varien_Data_Collection_Db`.
 
 
 There's a way for fetching a collection much faster than simply running `load()` method for the collection classes. This way is a good aproach when you don't need the instances of the data objects as a result when iterating the collection.
